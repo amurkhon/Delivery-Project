@@ -1,0 +1,73 @@
+from enum import Enum as PyEnum
+
+from database import Base
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boolean, Text, Enum, Table
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+class User(Base):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password = Column(String)
+    is_active = Column(Boolean, default=True)
+    is_staff = Column(Boolean, default=True)
+    orders = relationship('Order', back_populates='user') # one to many relationship
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<User {self.username}>"
+
+class OrderStatus(str, PyEnum):
+    pending = "pending"
+    confirmed = "confirmed"
+    delivered = "delivered"
+    cancelled = "cancelled"
+
+
+order_products = Table(
+    'order_products',
+    Base.metadata,
+    Column('order_id', ForeignKey('orders.id'), primary_key=True),
+    Column('product_id', ForeignKey('products.id'), primary_key=True),
+)
+
+
+class Order(Base):
+    __tablename__ = 'orders'
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    user = relationship('User', back_populates='orders') # many to one relationship
+    order_date = Column(DateTime, default=func.now())
+    quantity = Column(Integer, nullable=False)
+    total_amount = Column(Float)
+    status = Column(Enum(OrderStatus), default=OrderStatus.pending, nullable=False)
+    products = relationship(
+        'Product',
+        secondary=order_products,
+        back_populates='orders',
+    ) # many to many relationship
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<Order {self.id}>"
+
+class Product(Base):
+    __tablename__ = 'products'
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
+    quantity = Column(Integer, nullable=False)
+    orders = relationship(
+        'Order',
+        secondary=order_products,
+        back_populates='products',
+    ) # many to many relationship
+    created_at = Column(DateTime, default=func.now())
+    updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+    def __repr__(self):
+        return f"<Product {self.name}>"
