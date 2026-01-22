@@ -87,30 +87,30 @@ async def signin(user: SignInModel, Authorize: AuthJWT = Depends()):
 
 
 
-    @auth_router.get('/signin/refresh')
-    async def refresh_token(Authorize: AuthJWT = Depends()):
-        try:
-            Authorize.jwt_required() # access token is required
-            current_user = Authorize.get_jwt_subject() # get the user from the access token
+@auth_router.get('/signin/refresh')
+async def refresh_token(Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required() # access token is required
+        current_user = Authorize.get_jwt_subject() # get the user from the access token
 
-            # check if the user exists
-            user = db.query(User).filter(User.username == current_user).first()
-            if not user:
-                raise HTTPException(status_code=400, detail='Invalid user')
-            access_token = Authorize.create_access_token(subject=user.username)
-            refresh_token = Authorize.create_refresh_token(subject=user.username)
-            token = {
-                "access_token": access_token,
-                "refresh_token": refresh_token,
-            }
-            response = {
-                "success": True,
-                "status_code": status.HTTP_200_OK,
-                "message": "Successfully refreshed token",
-                "token": token,
-            }
-            Authorize.set_access_cookies(access_token)
-            Authorize.set_refresh_cookies(refresh_token)
-            return jsonable_encoder(response)
-        except Exception as e:
-            raise HTTPException(status_code=401, detail='Unauthorized')
+        # check if the user exists
+        user = db.query(User).filter(User.username == current_user).first()
+        if not user:
+            raise HTTPException(status_code=400, detail='Invalid user')
+        access_token = Authorize.create_access_token(subject=user.username)
+        refresh_token = Authorize.create_refresh_token(subject=user.username)
+        token = {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+        }
+        response = {
+            "success": True,
+            "status_code": status.HTTP_200_OK,
+            "message": "Successfully refreshed token",
+            "token": token,
+        }
+        Authorize.set_access_cookies(access_token)
+        Authorize.set_refresh_cookies(refresh_token)
+        return jsonable_encoder(response)
+    except Exception as e:
+        raise HTTPException(status_code=401, detail='Unauthorized')
