@@ -47,3 +47,48 @@ class Token(BaseModel):
     authjwt_secret_key: str = os.getenv("JWT_SECRET_KEY", "change-this-secret")
     authjwt_token_location: set = {"cookies"}
     authjwt_cookie_csrf_protect: bool = False
+
+class OrderModel(BaseModel):
+    id: Optional[int]
+    quantity: int
+    user_id: Optional[int]
+    product_id: Optional[int]
+    total_amount: Optional[float]
+    status: Optional[str]
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "quantity": 1,
+                "user_id": 1,
+                "product_id": 1,
+                "total_amount": 100.00,
+                "status": "PENDING",
+            }
+        }
+
+class OrderStatusModel(BaseModel):
+
+    order_statuses: Optional[str] = "PENDING"
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "name": "PENDING",
+            }
+        }
+
+class OrderUpdateModel(BaseModel):
+    status: Optional[str]
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "status": "PENDING",
+            }
+        }

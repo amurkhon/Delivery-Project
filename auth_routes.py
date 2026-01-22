@@ -55,6 +55,8 @@ async def signup(user: SignUpModel):
 
 @auth_router.post('/signin', status_code=status.HTTP_200_OK)
 async def signin(user: SignInModel, Authorize: AuthJWT = Depends()):
+    access_lifetime = datetime.timedelta(minutes=15)
+    refresh_lifetime = datetime.timedelta(days=30)
     # user_exists = db.query(User).filter(User.email == user.email).first()
 
     # username or email
@@ -68,8 +70,8 @@ async def signin(user: SignInModel, Authorize: AuthJWT = Depends()):
         raise HTTPException(status_code=400, detail='Invalid username or email!')
 
     if user_exists and check_password_hash(user_exists.password, user.password):
-        access_token = Authorize.create_access_token(subject=user_exists.username)
-        refresh_token = Authorize.create_refresh_token(subject=user_exists.username)
+        access_token = Authorize.create_access_token(subject=user_exists.username, expires_time=access_lifetime)
+        refresh_token = Authorize.create_refresh_token(subject=user_exists.username, expires_time=refresh_lifetime)
         token = {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -90,15 +92,18 @@ async def signin(user: SignInModel, Authorize: AuthJWT = Depends()):
 @auth_router.get('/signin/refresh')
 async def refresh_token(Authorize: AuthJWT = Depends()):
     try:
-        Authorize.jwt_required() # access token is required
+        access_lifetime = datetime.timedelta(minutes=15)
+        refresh_lifetime = datetime.timedelta(days=30)
+
+        Authorize.jwt_refresh_token_required() # refresh token is required
         current_user = Authorize.get_jwt_subject() # get the user from the access token
 
         # check if the user exists
         user = db.query(User).filter(User.username == current_user).first()
         if not user:
             raise HTTPException(status_code=400, detail='Invalid user')
-        access_token = Authorize.create_access_token(subject=user.username)
-        refresh_token = Authorize.create_refresh_token(subject=user.username)
+        access_token = Authorize.create_access_token(subject=user.username, expires_time=access_lifetime)
+        refresh_token = Authorize.create_refresh_token(subject=user.username, expires_time=refresh_lifetime)
         token = {
             "access_token": access_token,
             "refresh_token": refresh_token,
@@ -113,4 +118,4 @@ async def refresh_token(Authorize: AuthJWT = Depends()):
         Authorize.set_refresh_cookies(refresh_token)
         return jsonable_encoder(response)
     except Exception as e:
-        raise HTTPException(status_code=401, detail='Unauthorized')
+        raise HTTPException(status_code=401, detail='Invalid refresh token')
