@@ -63,3 +63,16 @@ async def update_order(order_id: int, order: OrderUpdateModel, Authorize: AuthJW
     db.commit()
     print("Order updated: ", target_order)
     return jsonable_encoder(target_order)
+
+@order_router.get('/single/{order_id}', status_code=status.HTTP_200_OK, response_model=OrderModel)
+async def get_order(order_id: int, Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(status_code=401, detail='Invalid access token')
+    current_user = Authorize.get_jwt_subject()
+    user = db.query(User).filter(User.username == current_user).first()
+    target_order = db.query(Order).filter(Order.id == order_id, Order.user_id == user.id).first()
+    if not target_order:
+        raise HTTPException(status_code=400, detail='Order not found')
+    return jsonable_encoder(target_order)
