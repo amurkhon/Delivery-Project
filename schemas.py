@@ -29,8 +29,9 @@ class SignUpModel(BaseModel):
     )
 
 class SignInModel(BaseModel):
-    email: str
+    email: str | None = None
     password: str
+    username: str | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -38,6 +39,7 @@ class SignInModel(BaseModel):
             "example": {
                 "email": "amir@gmail.com",
                 "password": "123456",
+                "username": "amir",
             }
         },
     )

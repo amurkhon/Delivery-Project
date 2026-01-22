@@ -1,4 +1,5 @@
 import datetime
+from sqlalchemy.sql._elements_constructors import or_
 from fastapi import APIRouter, Depends, status
 from fastapi_jwt_auth import AuthJWT
 from schemas import SignInModel, SignUpModel
@@ -15,7 +16,11 @@ auth_router = APIRouter(
 db = Session(bind=engine)
 
 @auth_router.get('/')
-async def signup():
+async def signup_auth(Authorize: AuthJWT = Depends()):
+    try:
+        Authorize.jwt_required()
+    except Exception as e:
+        raise HTTPException(status_code=401, detail='Unauthorized')
     return {'message': 'This is auth route signup page!'}
 
 @auth_router.post('/signup', status_code=status.HTTP_201_CREATED)
@@ -50,14 +55,30 @@ async def signup(user: SignUpModel):
 
 @auth_router.post('/signin', status_code=status.HTTP_200_OK)
 async def signin(user: SignInModel, Authorize: AuthJWT = Depends()):
-    user_exists = db.query(User).filter(User.email == user.email).first()
-    
+    # user_exists = db.query(User).filter(User.email == user.email).first()
+
+    # username or email
+    user_exists = db.query(User).filter(
+        or_(
+            User.username == user.username,
+            User.email == user.email,
+        )
+    ).first()
+    if not user_exists:
+        raise HTTPException(status_code=400, detail='Invalid username or email!')
+
     if user_exists and check_password_hash(user_exists.password, user.password):
         access_token = Authorize.create_access_token(subject=user_exists.username)
         refresh_token = Authorize.create_refresh_token(subject=user_exists.username)
-        response = {
+        token = {
             "access_token": access_token,
             "refresh_token": refresh_token,
+        }
+        response = {
+            "success": True,
+            "status_code": status.HTTP_200_OK,
+            "message": "Successfully logged in",
+            "token": token,
         }
         Authorize.set_access_cookies(access_token)
         Authorize.set_refresh_cookies(refresh_token)
