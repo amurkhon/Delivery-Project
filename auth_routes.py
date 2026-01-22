@@ -60,8 +60,8 @@ async def signin(user: SignInModel, Authorize: AuthJWT = Depends()):
     # username or email
     user_exists = db.query(User).filter(
         or_(
-            User.username == user.username,
-            User.email == user.email,
+            User.username == user.username_or_email,
+            User.email == user.username_or_email,
         )
     ).first()
     if not user_exists:

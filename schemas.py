@@ -29,15 +29,14 @@ class SignUpModel(BaseModel):
     )
 
 class SignInModel(BaseModel):
-    email: str | None = None
+    username_or_email: str
     password: str
-    username: str | None = None
 
     model_config = ConfigDict(
         from_attributes=True,
         json_schema_extra={
             "example": {
-                "email": "amir@gmail.com",
+                "username_or_email": "amir@gmail.com",
                 "password": "123456",
                 "username": "amir",
             }
