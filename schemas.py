@@ -1,9 +1,9 @@
 from datetime import datetime
 import os
 from pydantic import BaseModel, ConfigDict
-from typing import Optional
+from typing import List, Optional
 
-from models import ProductCategory, ProductStatus, UserRole
+from models import ProductCategory, ProductStatus, UserRole, OrderStatus
 
 class SignUpModel(BaseModel):
     id: Optional[int] = None
@@ -11,11 +11,11 @@ class SignUpModel(BaseModel):
     email: str
     password: str
     confirm_password: str
-    is_staff: Optional[bool] = True
+    is_staff: Optional[bool] = False
     is_active: Optional[bool] = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
-    role: str
+    role: Optional[str] = "member"
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -27,7 +27,7 @@ class SignUpModel(BaseModel):
                 "confirm_password": "123456",
                 "is_staff": False,
                 "is_active": True,
-                "role": UserRole.admin,
+                "role": "member",
             }
         },
     )
@@ -42,7 +42,6 @@ class SignInModel(BaseModel):
             "example": {
                 "username_or_email": "amir@gmail.com",
                 "password": "123456",
-                "username": "amir",
             }
         },
     )
@@ -52,13 +51,25 @@ class Token(BaseModel):
     authjwt_token_location: set = {"cookies"}
     authjwt_cookie_csrf_protect: bool = False
 
+# Order schemas
+class OrderCreateModel(BaseModel):
+    """Schema for creating a new order with multiple products"""
+    product_ids: List[int]
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "product_ids": [1, 2, 3],
+            }
+        }
+
 class OrderModel(BaseModel):
-    id: Optional[int]
-    quantity: int
-    user_id: Optional[int]
-    product_id: Optional[int]
-    total_amount: Optional[float]
-    status: Optional[str]
+    id: Optional[int] = None
+    quantity: Optional[int] = None
+    user_id: Optional[int] = None
+    total_amount: Optional[float] = None
+    status: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
 
@@ -66,44 +77,34 @@ class OrderModel(BaseModel):
         from_attributes = True
         json_schema_extra = {
             "example": {
-                "quantity": 1,
+                "id": 1,
+                "quantity": 3,
                 "user_id": 1,
-                "product_id": 1,
-                "total_amount": 100.00,
-                "status": "PENDING",
-            }
-        }
-
-class OrderStatusModel(BaseModel):
-
-    order_statuses: Optional[str] = "PENDING"
-
-    class Config:
-        from_attributes = True
-        json_schema_extra = {
-            "example": {
-                "name": "PENDING",
+                "total_amount": 150.00,
+                "status": "pending",
             }
         }
 
 class OrderUpdateModel(BaseModel):
-    status: Optional[str]
+    status: OrderStatus
 
     class Config:
         from_attributes = True
         json_schema_extra = {
             "example": {
-                "status": "PENDING",
+                "status": "confirmed",
             }
         }
 
+# Product schemas
 class ProductModel(BaseModel):
-    id: Optional[int]
+    id: Optional[int] = None
     name: str
     price: float
     quantity: int
-    created_at: Optional[datetime]
-    status: Optional[ProductStatus]
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+    status: Optional[ProductStatus] = ProductStatus.available
     product_category: ProductCategory
 
     class Config:
@@ -112,14 +113,15 @@ class ProductModel(BaseModel):
             "example": {
                 "name": "Product 1",
                 "price": 100.00,
-                "quantity": 1,
+                "quantity": 10,
                 "status": "available",
-                "product_category": ProductCategory.food,
+                "product_category": "food",
             }
         }
 
 class ProductDeleteModel(BaseModel):
     status: ProductStatus
+
     class Config:
         from_attributes = True
         json_schema_extra = {
@@ -127,8 +129,10 @@ class ProductDeleteModel(BaseModel):
                 "status": "deleted",
             }
         }
+
 class ProductInquiryModel(BaseModel):
-    status: ProductStatus
+    status: Optional[ProductStatus] = ProductStatus.available
+
     class Config:
         from_attributes = True
         json_schema_extra = {
