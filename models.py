@@ -5,6 +5,10 @@ from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Boo
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
+class UserRole(str, PyEnum):
+    admin = "admin"
+    member = "member"
+
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, index=True)
@@ -12,8 +16,9 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password = Column(String)
     is_active = Column(Boolean, default=True)
-    is_staff = Column(Boolean, default=True)
+    is_staff = Column(Boolean, default=False)
     orders = relationship('Order', back_populates='user') # one to many relationship
+    role = Column(Enum(UserRole, name="userrole"), default=UserRole.member, nullable=False)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
@@ -25,6 +30,11 @@ class OrderStatus(str, PyEnum):
     confirmed = "confirmed"
     delivered = "delivered"
     cancelled = "cancelled"
+
+class ProductCategory(str, PyEnum):
+    food = "food"
+    drink = "drink"
+    other = "other"
 
 
 order_products = Table(
@@ -55,12 +65,19 @@ class Order(Base):
     def __repr__(self):
         return f"<Order {self.id}>"
 
+class ProductStatus(str, PyEnum):
+    available = "available"
+    unavailable = "unavailable"
+    deleted = "deleted"
+
 class Product(Base):
     __tablename__ = 'products'
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     price = Column(Float, nullable=False)
-    quantity = Column(Integer, nullable=False)
+    quantity = Column(Integer, default=0)
+    product_category = Column(Enum(ProductCategory, name="productcategory"), default=ProductCategory.other, nullable=False)
+    status = Column(Enum(ProductStatus, name="productstatus"), default=ProductStatus.available, nullable=False)
     orders = relationship(
         'Order',
         secondary=order_products,

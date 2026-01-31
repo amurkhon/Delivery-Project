@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, status
 from fastapi_jwt_auth import AuthJWT
 from schemas import SignInModel, SignUpModel
 from database import Session, engine
-from models import User
+from models import User, UserRole
 from fastapi import HTTPException
-from werkzeug.security import generate_password_hash, check_password_hash
+import bcrypt
 from fastapi.encoders import jsonable_encoder
 
 auth_router = APIRouter(
@@ -14,6 +14,36 @@ auth_router = APIRouter(
 )
 
 db = Session(bind=engine)
+
+def normalize_password(password: str | bytes) -> bytes | None:
+    if not password:
+        return None
+    password_bytes = password.encode("utf-8") if isinstance(password, str) else password
+    if len(password_bytes) > 72:
+        return password_bytes[:72]
+    return password_bytes
+
+def hash_password(password: str | bytes) -> str:
+    password_bytes = normalize_password(password)
+    if not password_bytes:
+        raise ValueError("Password is required")
+    return bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode("utf-8")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        password_bytes = normalize_password(plain_password)
+        if not password_bytes:
+            return False
+        hashed_bytes = (
+            hashed_password.encode("utf-8")
+            if isinstance(hashed_password, str)
+            else hashed_password
+        )
+        return bcrypt.checkpw(password_bytes, hashed_bytes)
+    except ValueError:
+        return False
 
 @auth_router.get('/')
 async def signup_auth(Authorize: AuthJWT = Depends()):
@@ -33,7 +63,8 @@ async def signup(user: SignUpModel):
     new_user = User(
         username=user.username, 
         email=user.email, 
-        password=generate_password_hash(user.password),
+        password=hash_password(user.password),
+        role=user.role,
         is_active=user.is_active,
         is_staff=user.is_staff,
         created_at=datetime.datetime.now(),
@@ -55,7 +86,7 @@ async def signup(user: SignUpModel):
 
 @auth_router.post('/signin', status_code=status.HTTP_200_OK)
 async def signin(user: SignInModel, Authorize: AuthJWT = Depends()):
-    access_lifetime = datetime.timedelta(minutes=15)
+    access_lifetime = datetime.timedelta(hours=24)
     refresh_lifetime = datetime.timedelta(days=30)
     # user_exists = db.query(User).filter(User.email == user.email).first()
 
@@ -69,7 +100,7 @@ async def signin(user: SignInModel, Authorize: AuthJWT = Depends()):
     if not user_exists:
         raise HTTPException(status_code=400, detail='Invalid username or email!')
 
-    if user_exists and check_password_hash(user_exists.password, user.password):
+    if user_exists and verify_password(user.password, user_exists.password):
         access_token = Authorize.create_access_token(subject=user_exists.username, expires_time=access_lifetime)
         refresh_token = Authorize.create_refresh_token(subject=user_exists.username, expires_time=refresh_lifetime)
         token = {

@@ -3,16 +3,19 @@ import os
 from pydantic import BaseModel, ConfigDict
 from typing import Optional
 
+from models import ProductCategory, ProductStatus, UserRole
+
 class SignUpModel(BaseModel):
     id: Optional[int] = None
     username: str
     email: str
     password: str
-    confirm_password: Optional[str] = None
+    confirm_password: str
     is_staff: Optional[bool] = True
     is_active: Optional[bool] = True
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
+    role: str
 
     model_config = ConfigDict(
         from_attributes=True,
@@ -24,6 +27,7 @@ class SignUpModel(BaseModel):
                 "confirm_password": "123456",
                 "is_staff": False,
                 "is_active": True,
+                "role": UserRole.admin,
             }
         },
     )
@@ -90,5 +94,45 @@ class OrderUpdateModel(BaseModel):
         json_schema_extra = {
             "example": {
                 "status": "PENDING",
+            }
+        }
+
+class ProductModel(BaseModel):
+    id: Optional[int]
+    name: str
+    price: float
+    quantity: int
+    created_at: Optional[datetime]
+    status: Optional[ProductStatus]
+    product_category: ProductCategory
+
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "name": "Product 1",
+                "price": 100.00,
+                "quantity": 1,
+                "status": "available",
+                "product_category": ProductCategory.food,
+            }
+        }
+
+class ProductDeleteModel(BaseModel):
+    status: ProductStatus
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "status": "deleted",
+            }
+        }
+class ProductInquiryModel(BaseModel):
+    status: ProductStatus
+    class Config:
+        from_attributes = True
+        json_schema_extra = {
+            "example": {
+                "status": "available"
             }
         }
