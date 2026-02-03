@@ -22,7 +22,7 @@ async def create_product(product: ProductModel, Authorize: AuthJWT = Depends(), 
     new_product = Product(
         name=product.name, 
         price=product.price, 
-        quantity=product.quantity, 
+        volume=product.volume, 
         product_category=product.product_category,
         status=product.status or ProductStatus.available,
         created_at=datetime.now(),
@@ -45,7 +45,7 @@ async def update_product(product_id: int, product: ProductModel, Authorize: Auth
     
     target_product.name = product.name
     target_product.price = product.price
-    target_product.quantity = product.quantity
+    target_product.volume = product.volume
     target_product.product_category = product.product_category
     target_product.updated_at = datetime.now()
     

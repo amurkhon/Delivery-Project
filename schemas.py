@@ -3,7 +3,7 @@ import os
 from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
 
-from models import ProductCategory, ProductStatus, UserRole, OrderStatus
+from models import ProductCategory, ProductStatus, UserRole, OrderStatus, Volume
 
 class SignUpModel(BaseModel):
     id: Optional[int] = None
@@ -101,7 +101,7 @@ class ProductModel(BaseModel):
     id: Optional[int] = None
     name: str
     price: float
-    quantity: int
+    volume: Volume
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
     status: Optional[ProductStatus] = ProductStatus.available
@@ -113,7 +113,7 @@ class ProductModel(BaseModel):
             "example": {
                 "name": "Product 1",
                 "price": 100.00,
-                "quantity": 10,
+                "volume": "small",
                 "status": "available",
                 "product_category": "food",
             }

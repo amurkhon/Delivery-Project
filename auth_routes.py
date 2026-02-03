@@ -129,11 +129,9 @@ async def signin(user: SignInModel, Authorize: AuthJWT = Depends(), db: Session 
             "refresh_token": refresh_token,
         }
         response = {
-            "success": True,
-            "status_code": status.HTTP_200_OK,
-            "message": "Successfully logged in",
-            "token": token,
-        }
+            "user": user_exists, 
+            "token": token
+            }
         Authorize.set_access_cookies(access_token)
         Authorize.set_refresh_cookies(refresh_token)
         return jsonable_encoder(response)

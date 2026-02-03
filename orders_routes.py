@@ -38,10 +38,6 @@ async def create_order(order: OrderCreateModel, Authorize: AuthJWT = Depends(), 
         if product.status != ProductStatus.available:
             raise HTTPException(status_code=400, detail=f'Product "{product.name}" is not available')
         
-        # Check stock availability
-        if product.quantity < 1:
-            raise HTTPException(status_code=400, detail=f'Product "{product.name}" is out of stock')
-        
         products_to_add.append(product)
         total_amount += product.price
 
@@ -54,10 +50,9 @@ async def create_order(order: OrderCreateModel, Authorize: AuthJWT = Depends(), 
     )
     new_order.user = user
 
-    # Add products to order and decrement stock
+    # Add products to order
     for product in products_to_add:
         new_order.products.append(product)
-        product.quantity -= 1
 
     db.add(new_order)
     db.commit()

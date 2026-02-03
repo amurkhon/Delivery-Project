@@ -7,6 +7,7 @@ from orders_routes import order_router
 from fastapi_jwt_auth import AuthJWT
 from products_routes import product_router
 from schemas import SignInModel, Token
+from fastapi.middleware.cors import CORSMiddleware
 
 def run_migrations():
     alembic_cfg = Config("alembic.ini")
@@ -19,6 +20,14 @@ async def lifespan(app: FastAPI):
     yield
 
 app = FastAPI(lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @AuthJWT.load_config
 def get_config():

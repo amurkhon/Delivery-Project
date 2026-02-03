@@ -36,6 +36,10 @@ class ProductCategory(str, PyEnum):
     drink = "drink"
     other = "other"
 
+class Volume(str, PyEnum):
+    small = "small"
+    medium = "medium"
+    large = "large"
 
 order_products = Table(
     'order_products',
@@ -75,7 +79,7 @@ class Product(Base):
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, nullable=False)
     price = Column(Float, nullable=False)
-    quantity = Column(Integer, default=0)
+    volume = Column(Enum(Volume, name="volume"), default=Volume.small, nullable=False)
     product_category = Column(Enum(ProductCategory, name="productcategory"), default=ProductCategory.other, nullable=False)
     status = Column(Enum(ProductStatus, name="productstatus"), default=ProductStatus.available, nullable=False)
     orders = relationship(
